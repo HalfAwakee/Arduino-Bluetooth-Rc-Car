@@ -1,0 +1,76 @@
+/*
+Arduino Bluetooth Car Project
+2020 11 08
+*/
+// Libraries
+#include <AFMotor.h> 
+#include <SoftwareSerial.h>
+//Defining some stuff
+//Motor Pins
+AF_DCMotor motorSteer(4);//Steering motor is plugged into port 4 on the motor shield
+AF_DCMotor motorDrive(1);//Driving motor is plugged into port 1 on the motor shield
+//Bluetooth
+SoftwareSerial HM10(A1,A5); //Analog Pins for Rx and Tx 
+//variables
+int speed = 100;
+char appData; // Char to store characters sent from phone
+String inData = ""; // String for use in if statements
+const int YLight = A0; //Pin for yellow LED
+const int RLight = A2; //Pin for red LED
+void setup() {
+  Serial.begin(9600);
+  HM10.begin(9600); // set HM10 serial at 9600 band rate
+  pinMode(YLight, OUTPUT);// Set LED Pins to out
+  pinMode(RLight, OUTPUT);// Set LED Pins to out
+}
+
+void loop()
+{
+  HM10.listen();  // listen on the HM10 port
+  while (HM10.available() > 0) {   // if HM10 sends something then read
+    appData = HM10.read();
+    inData = String(appData);  // save the data in string format
+    Serial.write(appData);
+  }
+  
+ 
+  if (Serial.available()) {           // Read user input if available.
+    delay(10);
+    HM10.write(Serial.read());
+  }
+  if (inData == "F") {              // If data is F for forward, turn on the drive motor in the forward direction
+  motorDrive.setSpeed(speed);
+  motorDrive.run(FORWARD);
+  delay(1000);
+  }
+if (inData == "B") {              // If data is B for backward, turn on the drive motor in the backward direction
+  digitalWrite(RLight, HIGH);     // Also turn on the backing LED
+  motorDrive.setSpeed(speed);
+  motorDrive.run(BACKWARD);
+  delay(1000);
+  }
+if (inData == "L") {              // If data is L for left, turn on the steering motor in the forward direction
+  motorSteer.setSpeed(200);       // Also turn on the steering LED
+  digitalWrite(YLight, HIGH);
+  motorSteer.run(FORWARD);
+  delay(2500);
+  motorSteer.run(RELEASE);        // Return to neutral position
+  delay(1000);
+  }
+if (inData == "R") {              // If data is L for left, turn on the steering motor in the forward direction
+  motorSteer.setSpeed(200);       // Also turn on the steering LED
+  digitalWrite(YLight, HIGH);
+  motorSteer.run(BACKWARD);
+  delay(2500);
+  motorSteer.run(RELEASE);        // Return to neutral position
+  delay(1000);
+  }
+if (inData == "S") {              // If data is S for stop, then stop all motors
+  motorDrive.run(RELEASE);
+  motorSteer.run(RELEASE);
+  digitalWrite(YLight, LOW);      // Turn off the lights
+  digitalWrite(RLight, LOW);
+  }      
+
+  
+}
